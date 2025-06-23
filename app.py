@@ -3,12 +3,10 @@ import numpy as np
 import pandas as pd
 import joblib
 
-# ========================
-# Load Model dan Encoder
-# ========================
+# Load model KNN
 model = joblib.load('model_stunting_knn.pkl')
 
-# Mapping manual label prediksi
+# Label mapping manual
 label_map = {
     0: "normal",
     1: "severely stunted",
@@ -16,41 +14,72 @@ label_map = {
     3: "stunted"
 }
 
-# ========================
-# UI Streamlit
-# ========================
-st.set_page_config(page_title="Prediksi Gizi Balita", layout="centered")
-st.title("Prediksi Status Gizi Balita")
-st.markdown("Gunakan aplikasi ini untuk memprediksi status gizi balita berdasarkan umur, jenis kelamin, dan tinggi badan.")
+# Deskripsi berdasarkan status gizi
+deskripsi_map = {
+    "normal": "Anak memiliki tinggi badan yang sesuai dengan usianya, menandakan pertumbuhan yang baik.",
+    "severely stunted": "Anak sangat pendek untuk usianya. Ini merupakan kondisi serius yang menunjukkan masalah gizi kronis.",
+    "tinggi": "Anak memiliki tinggi badan di atas rata-rata untuk usianya. Ini menunjukkan pertumbuhan yang sangat baik.",
+    "stunted": "Anak lebih pendek dari standar usianya. Ini menunjukkan adanya kemungkinan masalah gizi kronis."
+}
 
-# ========================
-# Form Input User
-# ========================
-with st.form("form_stunting"):
-    umur = st.number_input('Umur (bulan)', min_value=0, max_value=60, step=1)
-    jenis_kelamin = st.selectbox('Jenis Kelamin', ['Laki-laki', 'Perempuan'])
-    tinggi_badan = st.number_input('Tinggi Badan (cm)', min_value=30.0, max_value=120.0, step=0.1)
+# Gambar berdasarkan hasil
+gambar_map = {
+    "normal": "https://i.ibb.co/BGB7kGp/normal.png",
+    "severely stunted": "https://i.ibb.co/LZsKCHx/severely.png",
+    "tinggi": "https://i.ibb.co/YZnV9K4/tinggi.png",
+    "stunted": "https://i.ibb.co/NVd6D6M/stunted.png"
+}
 
-    submit = st.form_submit_button("Prediksi")
+# Konfigurasi halaman
+st.set_page_config(page_title="Klasifikasi Gizi Balita", layout="wide")
+st.title("Klasifikasi Permasalahan Gizi Balita")
 
-# ========================
-# Prediksi dan Output
-# ========================
-if submit:
-    # Konversi jenis kelamin ke angka
-    jk_encoded = 0 if jenis_kelamin == "Laki-laki" else 1
+# Kolom input dan hasil
+col1, col2 = st.columns([1, 1])
 
-    # Format input menjadi dataframe
-    input_data = pd.DataFrame({
-        'Umur (bulan)': [umur],
-        'Jenis Kelamin': [jk_encoded],
-        'Tinggi Badan (cm)': [tinggi_badan]
-    })
+# ====================
+# Form Input
+# ====================
+with col1:
+    st.subheader("Masukkan Data Balita")
+    with st.form("form_stunting"):
+        jenis_kelamin = st.selectbox('Pilih jenis kelamin:', ['Laki-laki', 'Perempuan'])
+        umur = st.number_input('Masukkan umur dalam bulan (0-60):', min_value=0, max_value=60, step=1)
+        berat_badan = st.number_input('Masukkan berat badan balita (Kg):', min_value=2.0, max_value=50.0, step=0.1)
+        tinggi_badan = st.number_input('Masukkan tinggi badan balita (Cm):', min_value=30.0, max_value=130.0, step=0.1)
+        submitted = st.form_submit_button("Prediksi Gizi")
 
-    # Lakukan prediksi
-    prediction = model.predict(input_data)[0]
-    prediction_label = label_map.get(prediction, "Tidak diketahui")
+# ====================
+# Hasil Prediksi
+# ====================
+with col2:
+    st.subheader("Hasil Klasifikasi")
 
-    # Tampilkan hasil prediksi
-    st.subheader("Hasil Prediksi:")
-    st.success(f"Status Gizi: {prediction_label.capitalize()}")
+    if submitted:
+        jk_encoded = 0 if jenis_kelamin == 'Laki-laki' else 1
+
+        # Format input untuk prediksi
+        input_data = pd.DataFrame({
+            'Umur (bulan)': [umur],
+            'Jenis Kelamin': [jk_encoded],
+            'Tinggi Badan (cm)': [tinggi_badan]
+        })
+
+        prediction = model.predict(input_data)[0]
+        label = label_map.get(prediction, "Tidak diketahui")
+        deskripsi = deskripsi_map.get(label, "")
+        gambar = gambar_map.get(label, "https://i.ibb.co/3Nkdz9W/question.png")
+
+        st.image(gambar, width=200)
+        st.markdown(f"### Status Gizi: **{label.capitalize()}**")
+        st.info(deskripsi)
+    else:
+        st.image("https://i.ibb.co/3Nkdz9W/question.png", width=200)
+        st.markdown("### Tidak ada hasil")
+        st.write("Silakan masukkan data terlebih dahulu untuk melihat hasil prediksi tumbuh kembang balita.")
+
+    st.markdown("""
+    <hr>
+    <p style='font-size: 14px;'>Standar Antropometri Anak digunakan untuk menilai status gizi berdasarkan perbandingan berat badan dan panjang/tinggi badan anak.
+    Klasifikasi ini mengacu pada WHO Growth Standards untuk anak usia 0–5 tahun dan WHO Reference 2007 untuk usia 5–18 tahun.</p>
+    """, unsafe_allow_html=True)
