@@ -22,13 +22,16 @@ deskripsi_map = {
     "stunted": "Anak lebih pendek dari standar usianya. Ini menunjukkan adanya kemungkinan masalah gizi kronis."
 }
 
-# Gambar berdasarkan hasil
+# Gambar berdasarkan hasil prediksi (dari GitHub)
 gambar_map = {
-    "normal": "https://i.ibb.co/BGB7kGp/normal.png",
-    "severely stunted": "https://i.ibb.co/LZsKCHx/severely.png",
-    "tinggi": "https://i.ibb.co/YZnV9K4/tinggi.png",
-    "stunted": "https://i.ibb.co/NVd6D6M/stunted.png"
+    "normal": "https://raw.githubusercontent.com/measza/stunting_assets/main/normal.jpg",
+    "severely stunted": "https://raw.githubusercontent.com/measza/stunting_assets/main/sangat%20terhambat.jpg",
+    "tinggi": "https://raw.githubusercontent.com/measza/stunting_assets/main/tinggi.jpg",
+    "stunted": "https://raw.githubusercontent.com/measza/stunting_assets/main/stunting.jpg"
 }
+
+# Gambar default (belum ada hasil)
+default_image = "https://raw.githubusercontent.com/measza/stunting_assets/main/bertanya.jpg"
 
 # Konfigurasi halaman
 st.set_page_config(page_title="Klasifikasi Gizi Balita", layout="wide")
@@ -45,7 +48,6 @@ with col1:
     with st.form("form_stunting"):
         jenis_kelamin = st.selectbox('Pilih jenis kelamin:', ['Laki-laki', 'Perempuan'])
         umur = st.number_input('Masukkan umur dalam bulan (0-60):', min_value=0, max_value=60, step=1)
-        berat_badan = st.number_input('Masukkan berat badan balita (Kg):', min_value=2.0, max_value=50.0, step=0.1)
         tinggi_badan = st.number_input('Masukkan tinggi badan balita (Cm):', min_value=30.0, max_value=130.0, step=0.1)
         submitted = st.form_submit_button("Prediksi Gizi")
 
@@ -68,13 +70,13 @@ with col2:
         prediction = model.predict(input_data)[0]
         label = label_map.get(prediction, "Tidak diketahui")
         deskripsi = deskripsi_map.get(label, "")
-        gambar = gambar_map.get(label, "https://i.ibb.co/3Nkdz9W/question.png")
+        gambar = gambar_map.get(label, default_image)
 
-        st.image(gambar, width=200)
+        st.image(gambar, width=250)
         st.markdown(f"### Status Gizi: **{label.capitalize()}**")
         st.info(deskripsi)
     else:
-        st.image("https://i.ibb.co/3Nkdz9W/question.png", width=200)
+        st.image(default_image, width=250)
         st.markdown("### Tidak ada hasil")
         st.write("Silakan masukkan data terlebih dahulu untuk melihat hasil prediksi tumbuh kembang balita.")
 
